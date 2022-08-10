@@ -1,17 +1,14 @@
 package org.firstinspires.ftc.teamcode;
 
-import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 
-public class TeleopMain extends OpMode {
+public class TelopRobot extends OpMode {
     DcMotor motorFrontLeft;
     DcMotor motorBackLeft;
     DcMotor motorFrontRight;
     DcMotor motorBackRight;
-
-    BNO055IMU imu;
 
     @Override
     public void init() {
@@ -21,31 +18,21 @@ public class TeleopMain extends OpMode {
         motorBackRight = hardwareMap.dcMotor.get("motor back right");
         motorFrontRight.setDirection(DcMotorSimple.Direction.REVERSE);
         motorFrontLeft.setDirection(DcMotorSimple.Direction.REVERSE);
-
-        imu = hardwareMap.get(BNO055IMU.class, "imu");
-        BNO055IMU.Parameters parameters = new BNO055IMU.Parameters();
-        imu.initialize(parameters);
     }
 
     @Override
     public void loop() {
-        double y = -gamepad1.left_stick_y; // Y-axes are reversed for some godforsaken reason
-        double x = gamepad1.left_stick_x * 1.1; // Strafe a bit faster
+        double y = -gamepad1.left_stick_y; // Reversed
+        double x = gamepad1.left_stick_x * 1.1; // Counteract imperfect strafing
         double rx = gamepad1.right_stick_x;
 
-        // IMU heading is clockwise positive
-        double botHeading = -imu.getAngularOrientation().firstAngle;
-        double rotX = x * Math.cos(botHeading) - y * Math.sin(botHeading);
-        double rotY = x * Math.sin(botHeading) + y * Math.cos(botHeading);
-
-        // Denominator = largest motor power or 1
+        // Ensure all powers retain same ratio
         double denominator = Math.max(Math.abs(y) + Math.abs(x) + Math.abs(rx), 1);
+        double frontLeftPower = (y + x + rx) / denominator;
+        double backLeftPower = (y - x + rx) / denominator;
+        double frontRightPower = (y - x - rx) / denominator;
+        double backRightPower = (y + x - rx) / denominator;
 
-        // Calculate and set motor power
-        double frontLeftPower = (rotY + rotX + rx) / denominator;
-        double backLeftPower = (rotY - rotX + rx) / denominator;
-        double frontRightPower = (rotY - rotX - rx) / denominator;
-        double backRightPower = (rotY + rotX - rx) / denominator;
         motorFrontLeft.setPower(frontLeftPower);
         motorBackLeft.setPower(backLeftPower);
         motorFrontRight.setPower(frontRightPower);
